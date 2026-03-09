@@ -1,0 +1,20 @@
+{
+  "typescriptVersion": "5.9.3",
+  "sources": [
+    "15-type-only-namespace.index.ts",
+    "15-type-only-namespace.services.ts"
+  ],
+  "records": [
+    {
+      "kind": "member",
+      "target": "Main.prototype",
+      "key": "\"field\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        }
+      ]
+    }
+  ]
+}

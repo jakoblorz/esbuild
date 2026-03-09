@@ -96,6 +96,7 @@ type parser struct {
 	localTypeMetadata           map[string]js_ast.Expr
 	localEnumNames              map[string]bool
 	decoratorMetadataGlobals    map[string]ast.Ref
+	decoratorMetadataTypeOnly   map[string]bool
 	decoratorMetadataTypeParams map[string]uint32
 	tsEnums                     map[ast.Ref]map[string]js_ast.TSEnumValue
 	constValues                 map[ast.Ref]js_ast.ConstValue
@@ -6234,6 +6235,7 @@ func (p *parser) parseFn(
 			p.lexer.Next()
 			fn.HasRestArg = true
 		}
+		isRestArg := fn.HasRestArg
 
 		isTypeScriptCtorField := false
 		isIdentifier := p.lexer.Token == js_lexer.TIdentifier
@@ -6272,7 +6274,11 @@ func (p *parser) parseFn(
 			if p.lexer.Token == js_lexer.TColon {
 				p.lexer.Next()
 				if data.captureDecoratorMetadata {
-					tsDecoratorTypeOrNil = p.skipTypeScriptTypeAndCaptureDecoratorMetadata()
+					if isRestArg {
+						tsDecoratorTypeOrNil = p.skipTypeScriptTypeAndCaptureDecoratorMetadataForRestParameter()
+					} else {
+						tsDecoratorTypeOrNil = p.skipTypeScriptTypeAndCaptureDecoratorMetadata()
+					}
 				} else {
 					p.skipTypeScriptType(js_ast.LLowest)
 				}
@@ -8059,6 +8065,9 @@ func (p *parser) parseStmt(opts parseStmtOpts) js_ast.Stmt {
 							break syntaxBeforePath
 						} else {
 							// "import type foo from 'bar';"
+							if p.shouldCaptureTypeScriptDecoratorMetadata() {
+								p.decoratorMetadataTypeOnly[nameSubstring.String] = true
+							}
 							p.lexer.ExpectContextualKeyword("from")
 							p.parsePath()
 							p.lexer.ExpectOrInsertSemicolon()
@@ -8069,6 +8078,9 @@ func (p *parser) parseStmt(opts parseStmtOpts) js_ast.Stmt {
 						// "import type * as foo from 'bar';"
 						p.lexer.Next()
 						p.lexer.ExpectContextualKeyword("as")
+						if p.shouldCaptureTypeScriptDecoratorMetadata() {
+							p.decoratorMetadataTypeOnly[p.lexer.Identifier.String] = true
+						}
 						p.lexer.Expect(js_lexer.TIdentifier)
 						p.lexer.ExpectContextualKeyword("from")
 						p.parsePath()
@@ -8077,7 +8089,12 @@ func (p *parser) parseStmt(opts parseStmtOpts) js_ast.Stmt {
 
 					case js_lexer.TOpenBrace:
 						// "import type {foo} from 'bar';"
-						p.parseImportClause()
+						items, _ := p.parseImportClause()
+						if p.shouldCaptureTypeScriptDecoratorMetadata() {
+							for _, item := range items {
+								p.decoratorMetadataTypeOnly[p.loadNameFromRef(item.Name.Ref)] = true
+							}
+						}
 						p.lexer.ExpectContextualKeyword("from")
 						p.parsePath()
 						p.lexer.ExpectOrInsertSemicolon()
@@ -17750,6 +17767,7 @@ func newParser(log logger.Log, source logger.Source, lexer js_lexer.Lexer, optio
 		localTypeMetadata:           make(map[string]js_ast.Expr),
 		localEnumNames:              make(map[string]bool),
 		decoratorMetadataGlobals:    make(map[string]ast.Ref),
+		decoratorMetadataTypeOnly:   make(map[string]bool),
 		decoratorMetadataTypeParams: make(map[string]uint32),
 
 		// These are for handling ES6 imports and exports

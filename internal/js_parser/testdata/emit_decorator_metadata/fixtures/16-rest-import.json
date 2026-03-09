@@ -1,0 +1,39 @@
+{
+  "typescriptVersion": "5.9.3",
+  "sources": [
+    "16-rest-import.aux.ts",
+    "16-rest-import.main.ts"
+  ],
+  "records": [
+    {
+      "kind": "member",
+      "target": "ClassA.prototype",
+      "key": "\"foo\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[SomeClass]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "class",
+      "target": "ClassA",
+      "key": null,
+      "metadata": [
+        {
+          "key": "design:paramtypes",
+          "value": "[SomeClass]"
+        }
+      ]
+    }
+  ]
+}

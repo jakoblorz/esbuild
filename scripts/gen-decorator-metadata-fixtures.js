@@ -12,6 +12,12 @@ const fixturesDir = path.join(repoRoot, 'internal/js_parser/testdata/emit_decora
 
 const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind.LineFeed })
 
+function caseGroupFromFileName(file) {
+  const base = file.replace(/\.ts$/, '')
+  const dot = base.indexOf('.')
+  return dot === -1 ? base : base.slice(0, dot)
+}
+
 function normalizeText(text) {
   return text.replace(/\s+/g, ' ').trim()
 }
@@ -116,7 +122,7 @@ function extractMetadataRecords(js, sourcePathForDiagnostics) {
   return records
 }
 
-function compileCase(casePath, outDir) {
+function compileCaseGroup(casePaths, outDir) {
   const args = [
     tscPath,
     '--target', 'ES2020',
@@ -126,13 +132,18 @@ function compileCase(casePath, outDir) {
     '--emitDecoratorMetadata',
     '--pretty', 'false',
     '--outDir', outDir,
-    casePath,
+    ...casePaths,
   ]
 
-  child_process.execFileSync(process.execPath, args, {
+  const result = child_process.spawnSync(process.execPath, args, {
     cwd: repoRoot,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
   })
+
+  if (result.status !== 0) {
+    const combined = `${result.stdout || ''}${result.stderr || ''}`
+    process.stderr.write(`tsc reported diagnostics for ${path.basename(outDir)}:\n${combined}`)
+  }
 }
 
 function main() {
@@ -143,27 +154,56 @@ function main() {
     .filter(name => name.endsWith('.ts'))
     .sort((a, b) => a.localeCompare(b))
 
+  const groups = new Map()
+  for (const file of files) {
+    const group = caseGroupFromFileName(file)
+    let groupFiles = groups.get(group)
+    if (!groupFiles) {
+      groupFiles = []
+      groups.set(group, groupFiles)
+    }
+    groupFiles.push(file)
+  }
+
+  const groupNames = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b))
+
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-md-fixtures-'))
 
   try {
-    for (const file of files) {
-      const casePath = path.join(casesDir, file)
-      const outDir = path.join(tempRoot, path.basename(file, '.ts'))
+    for (const groupName of groupNames) {
+      const groupFiles = groups.get(groupName).slice().sort((a, b) => a.localeCompare(b))
+      const casePaths = groupFiles.map(file => path.join(casesDir, file))
+      const outDir = path.join(tempRoot, groupName)
       fs.mkdirSync(outDir, { recursive: true })
 
-      compileCase(casePath, outDir)
+      compileCaseGroup(casePaths, outDir)
 
-      const emittedPath = path.join(outDir, file.replace(/\.ts$/, '.js'))
-      const js = fs.readFileSync(emittedPath, 'utf8')
-      const records = extractMetadataRecords(js, emittedPath)
-
-      const fixture = {
-        typescriptVersion: ts.version,
-        source: file,
-        records,
+      const records = []
+      for (const file of groupFiles) {
+        if (file.endsWith('.d.ts')) {
+          continue
+        }
+        const emittedPath = path.join(outDir, file.replace(/\.ts$/, '.js'))
+        if (!fs.existsSync(emittedPath)) {
+          continue
+        }
+        const js = fs.readFileSync(emittedPath, 'utf8')
+        records.push(...extractMetadataRecords(js, emittedPath))
       }
 
-      const fixturePath = path.join(fixturesDir, file.replace(/\.ts$/, '.json'))
+      const fixture = groupFiles.length === 1
+        ? {
+            typescriptVersion: ts.version,
+            source: groupFiles[0],
+            records,
+          }
+        : {
+            typescriptVersion: ts.version,
+            sources: groupFiles,
+            records,
+          }
+
+      const fixturePath = path.join(fixturesDir, `${groupName}.json`)
       fs.writeFileSync(fixturePath, JSON.stringify(fixture, null, 2) + '\n')
       process.stdout.write(`wrote ${path.relative(repoRoot, fixturePath)}\n`)
     }

@@ -21,7 +21,8 @@ import (
 
 type decoratorMetadataFixture struct {
 	TypeScriptVersion string                    `json:"typescriptVersion"`
-	Source            string                    `json:"source"`
+	Source            string                    `json:"source,omitempty"`
+	Sources           []string                  `json:"sources,omitempty"`
 	Records           []decoratorMetadataRecord `json:"records"`
 }
 
@@ -47,25 +48,26 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 		t.Fatalf("failed to read cases directory: %v", err)
 	}
 
-	var names []string
+	groupToFiles := make(map[string][]string)
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".ts") {
 			continue
 		}
-		names = append(names, strings.TrimSuffix(entry.Name(), ".ts"))
+		name := strings.TrimSuffix(entry.Name(), ".ts")
+		group := decoratorMetadataCaseGroupName(name)
+		groupToFiles[group] = append(groupToFiles[group], entry.Name())
+	}
+
+	var names []string
+	for name := range groupToFiles {
+		names = append(names, name)
 	}
 	sort.Strings(names)
 
 	for _, name := range names {
 		name := name
 		t.Run(name, func(t *testing.T) {
-			casePath := filepath.Join(casesDir, name+".ts")
 			fixturePath := filepath.Join(fixturesDir, name+".json")
-
-			contents, err := os.ReadFile(casePath)
-			if err != nil {
-				t.Fatalf("failed to read case %q: %v", casePath, err)
-			}
 
 			fixtureBytes, err := os.ReadFile(fixturePath)
 			if err != nil {
@@ -77,8 +79,19 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 				t.Fatalf("failed to parse fixture %q: %v", fixturePath, err)
 			}
 
-			generated := compileTSWithDecoratorMetadataForTest(t, string(contents))
-			actual := extractDecoratorMetadataRecordsForTest(t, generated)
+			files := append([]string{}, groupToFiles[name]...)
+			sort.Strings(files)
+
+			var actual []decoratorMetadataRecord
+			for _, file := range files {
+				casePath := filepath.Join(casesDir, file)
+				contents, err := os.ReadFile(casePath)
+				if err != nil {
+					t.Fatalf("failed to read case %q: %v", casePath, err)
+				}
+				generated := compileTSWithDecoratorMetadataForTest(t, string(contents))
+				actual = append(actual, extractDecoratorMetadataRecordsForTest(t, generated)...)
+			}
 
 			actualBytes, err := json.MarshalIndent(actual, "", "  ")
 			if err != nil {
@@ -92,6 +105,13 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 			test.AssertEqualWithDiff(t, string(actualBytes)+"\n", string(expectedBytes)+"\n")
 		})
 	}
+}
+
+func decoratorMetadataCaseGroupName(name string) string {
+	if dot := strings.IndexByte(name, '.'); dot != -1 {
+		return name[:dot]
+	}
+	return name
 }
 
 func compileTSWithDecoratorMetadataForTest(t *testing.T, contents string) string {

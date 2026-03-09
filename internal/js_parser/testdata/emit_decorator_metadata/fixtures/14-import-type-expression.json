@@ -1,0 +1,20 @@
+{
+  "typescriptVersion": "5.9.3",
+  "sources": [
+    "14-import-type-expression.a.ts",
+    "14-import-type-expression.b.ts"
+  ],
+  "records": [
+    {
+      "kind": "member",
+      "target": "A.prototype",
+      "key": "\"b\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    }
+  ]
+}

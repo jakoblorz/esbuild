@@ -62,6 +62,13 @@ func (p *parser) skipTypeScriptTypeAndCaptureDecoratorMetadata() js_ast.Expr {
 	return p.decoratorMetadataExprFromTypeRange(start, end, logger.Loc{Start: start})
 }
 
+func (p *parser) skipTypeScriptTypeAndCaptureDecoratorMetadataForRestParameter() js_ast.Expr {
+	start := p.lexer.Range().Loc.Start
+	p.skipTypeScriptType(js_ast.LLowest)
+	end := p.lexer.Range().Loc.Start
+	return p.decoratorMetadataExprForRestParameterFromTypeRange(start, end, logger.Loc{Start: start})
+}
+
 func (p *parser) skipTypeScriptReturnTypeAndCaptureDecoratorMetadata() js_ast.Expr {
 	start := p.lexer.Range().Loc.Start
 	p.skipTypeScriptReturnType()
@@ -74,6 +81,34 @@ func (p *parser) decoratorMetadataExprFromTypeRange(start int32, end int32, loc 
 		return p.decoratorMetadataObjectExpr(loc)
 	}
 	text := strings.TrimSpace(p.source.Contents[start:end])
+	return p.decoratorMetadataExprFromTypeText(text, loc)
+}
+
+func (p *parser) decoratorMetadataExprForRestParameterFromTypeRange(start int32, end int32, loc logger.Loc) js_ast.Expr {
+	if start < 0 || end < start || end > int32(len(p.source.Contents)) {
+		return p.decoratorMetadataObjectExpr(loc)
+	}
+	text := strings.TrimSpace(p.source.Contents[start:end])
+
+	for {
+		trimmed := strings.TrimSpace(text)
+		if len(trimmed) < 2 || trimmed[0] != '(' || trimmed[len(trimmed)-1] != ')' || !typeTextHasOuterParens(trimmed) {
+			break
+		}
+		text = strings.TrimSpace(trimmed[1 : len(trimmed)-1])
+	}
+
+	if strings.HasPrefix(text, "readonly ") {
+		text = strings.TrimSpace(strings.TrimPrefix(text, "readonly "))
+	}
+
+	if strings.HasSuffix(text, "[]") {
+		elementText := strings.TrimSpace(strings.TrimSuffix(text, "[]"))
+		if elementText != "" {
+			return p.decoratorMetadataExprFromTypeText(elementText, loc)
+		}
+	}
+
 	return p.decoratorMetadataExprFromTypeText(text, loc)
 }
 
@@ -199,6 +234,9 @@ func (p *parser) decoratorMetadataExprFromTypeText(text string, loc logger.Loc) 
 	if expr, baseName, ok := p.decoratorMetadataEntityNameToExpr(text, loc); ok {
 		if p.decoratorMetadataTypeParams[baseName] > 0 {
 			return p.decoratorMetadataObjectExpr(loc)
+		}
+		if p.decoratorMetadataTypeOnly[baseName] {
+			return p.decoratorMetadataFunctionExpr(loc)
 		}
 		if resolved, ok := p.resolveLocalTypeMetadata(baseName, make(map[string]bool)); ok {
 			return resolved

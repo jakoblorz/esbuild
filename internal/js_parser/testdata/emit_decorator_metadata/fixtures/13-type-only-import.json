@@ -1,0 +1,39 @@
+{
+  "typescriptVersion": "5.9.3",
+  "sources": [
+    "13-type-only-import.component.ts",
+    "13-type-only-import.service.ts"
+  ],
+  "records": [
+    {
+      "kind": "member",
+      "target": "MyComponent.prototype",
+      "key": "\"method\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[Object]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "class",
+      "target": "MyComponent",
+      "key": null,
+      "metadata": [
+        {
+          "key": "design:paramtypes",
+          "value": "[Function]"
+        }
+      ]
+    }
+  ]
+}
