@@ -1,0 +1,39 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "10-readonly-collections.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "ReadonlyCollections.prototype",
+      "key": "\"roArray\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Array"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "ReadonlyCollections.prototype",
+      "key": "\"roTuple\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Array"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "ReadonlyCollections.prototype",
+      "key": "\"roArrayRef\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Array"
+        }
+      ]
+    }
+  ]
+}

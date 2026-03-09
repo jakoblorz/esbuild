@@ -1,0 +1,72 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "09-generic-union.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "Generic.prototype",
+      "key": "\"value\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "UnionFiltered.prototype",
+      "key": "\"a\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Ref"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "UnionFiltered.prototype",
+      "key": "\"b\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Ref"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "UnionFiltered.prototype",
+      "key": "\"c\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "UnionFiltered.prototype",
+      "key": "\"d\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "UnionFiltered.prototype",
+      "key": "\"e\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Boolean"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "12-inferred-field.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "InferredField.prototype",
+      "key": "\"inferred\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "InferredField.prototype",
+      "key": "\"text\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "InferredField.prototype",
+      "key": "\"num\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "InferredField.prototype",
+      "key": "\"bool\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    }
+  ]
+}

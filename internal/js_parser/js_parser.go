@@ -87,19 +87,20 @@ type parser struct {
 	// recently visited node. If namespace metadata is present, "tsNamespaceTarget"
 	// will be set to the most recently visited node (as a way to mark that this
 	// node has metadata) and "tsNamespaceMemberData" will be set to the metadata.
-	refToTSNamespaceMemberData map[ast.Ref]js_ast.TSNamespaceMemberData
-	tsNamespaceTarget          js_ast.E
-	tsNamespaceMemberData      js_ast.TSNamespaceMemberData
-	emittedNamespaceVars       map[ast.Ref]bool
-	isExportedInsideNamespace  map[ast.Ref]ast.Ref
-	localTypeNames             map[string]bool
-	localTypeMetadata          map[string]js_ast.Expr
-	localEnumNames             map[string]bool
-	decoratorMetadataGlobals   map[string]ast.Ref
-	tsEnums                    map[ast.Ref]map[string]js_ast.TSEnumValue
-	constValues                map[ast.Ref]js_ast.ConstValue
-	propDerivedCtorValue       js_ast.E
-	propMethodDecoratorScope   *js_ast.Scope
+	refToTSNamespaceMemberData  map[ast.Ref]js_ast.TSNamespaceMemberData
+	tsNamespaceTarget           js_ast.E
+	tsNamespaceMemberData       js_ast.TSNamespaceMemberData
+	emittedNamespaceVars        map[ast.Ref]bool
+	isExportedInsideNamespace   map[ast.Ref]ast.Ref
+	localTypeNames              map[string]bool
+	localTypeMetadata           map[string]js_ast.Expr
+	localEnumNames              map[string]bool
+	decoratorMetadataGlobals    map[string]ast.Ref
+	decoratorMetadataTypeParams map[string]uint32
+	tsEnums                     map[ast.Ref]map[string]js_ast.TSEnumValue
+	constValues                 map[ast.Ref]js_ast.ConstValue
+	propDerivedCtorValue        js_ast.E
+	propMethodDecoratorScope    *js_ast.Scope
 
 	// This is the reference to the generated function argument for the namespace,
 	// which is different than the reference to the namespace itself:
@@ -6406,7 +6407,12 @@ func (p *parser) parseClassStmt(loc logger.Loc, opts parseStmtOpts) js_ast.Stmt 
 
 	// Even anonymous classes can have TypeScript type parameters
 	if p.options.ts.Parse {
-		p.skipTypeScriptTypeParameters(allowInOutVarianceAnnotations | allowConstModifier)
+		start := p.lexer.Range().Loc.Start
+		if p.skipTypeScriptTypeParameters(allowInOutVarianceAnnotations|allowConstModifier) != didNotSkipAnything && p.shouldCaptureTypeScriptDecoratorMetadata() {
+			end := p.lexer.Range().Loc.Start
+			names := p.pushDecoratorMetadataTypeParametersFromRange(start, end)
+			defer p.popDecoratorMetadataTypeParameters(names)
+		}
 	}
 
 	classOpts := parseClassOpts{
@@ -6458,7 +6464,12 @@ func (p *parser) parseClassExpr(decorators []js_ast.Decorator) js_ast.Expr {
 
 	// Even anonymous classes can have TypeScript type parameters
 	if p.options.ts.Parse {
-		p.skipTypeScriptTypeParameters(allowInOutVarianceAnnotations | allowConstModifier)
+		start := p.lexer.Range().Loc.Start
+		if p.skipTypeScriptTypeParameters(allowInOutVarianceAnnotations|allowConstModifier) != didNotSkipAnything && p.shouldCaptureTypeScriptDecoratorMetadata() {
+			end := p.lexer.Range().Loc.Start
+			names := p.pushDecoratorMetadataTypeParametersFromRange(start, end)
+			defer p.popDecoratorMetadataTypeParameters(names)
+		}
 	}
 
 	class := p.parseClass(classKeyword, name, opts)
@@ -17732,13 +17743,14 @@ func newParser(log logger.Log, source logger.Source, lexer js_lexer.Lexer, optio
 		privateSetters: make(map[ast.Ref]ast.Ref),
 
 		// These are for TypeScript
-		refToTSNamespaceMemberData: make(map[ast.Ref]js_ast.TSNamespaceMemberData),
-		emittedNamespaceVars:       make(map[ast.Ref]bool),
-		isExportedInsideNamespace:  make(map[ast.Ref]ast.Ref),
-		localTypeNames:             make(map[string]bool),
-		localTypeMetadata:          make(map[string]js_ast.Expr),
-		localEnumNames:             make(map[string]bool),
-		decoratorMetadataGlobals:   make(map[string]ast.Ref),
+		refToTSNamespaceMemberData:  make(map[ast.Ref]js_ast.TSNamespaceMemberData),
+		emittedNamespaceVars:        make(map[ast.Ref]bool),
+		isExportedInsideNamespace:   make(map[ast.Ref]ast.Ref),
+		localTypeNames:              make(map[string]bool),
+		localTypeMetadata:           make(map[string]js_ast.Expr),
+		localEnumNames:              make(map[string]bool),
+		decoratorMetadataGlobals:    make(map[string]ast.Ref),
+		decoratorMetadataTypeParams: make(map[string]uint32),
 
 		// These are for handling ES6 imports and exports
 		importItemsForNamespace: make(map[ast.Ref]namespaceImportItems),

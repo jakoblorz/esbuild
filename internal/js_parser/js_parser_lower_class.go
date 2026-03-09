@@ -1229,6 +1229,8 @@ func (p *parser) legacyDecoratorMetadataForProperty(loc logger.Loc, prop js_ast.
 			}
 			if fn.Fn.TSDecoratorHasReturnType {
 				returnType = fn.Fn.TSDecoratorReturnTypeOrNil
+			} else if fn.Fn.IsAsync {
+				returnType = p.decoratorMetadataPromiseExpr(loc)
 			}
 		}
 		return []js_ast.Expr{

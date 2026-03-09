@@ -1,0 +1,63 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "11-async-promise.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "AsyncMethods.prototype",
+      "key": "\"inferred\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "Promise"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "AsyncMethods.prototype",
+      "key": "\"explicit\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "Promise"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "AsyncMethods.prototype",
+      "key": "\"syncPromise\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[Promise]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "Promise"
+        }
+      ]
+    }
+  ]
+}
