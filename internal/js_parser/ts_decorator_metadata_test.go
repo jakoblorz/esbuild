@@ -38,10 +38,17 @@ type decoratorMetadataPair struct {
 	Value string `json:"value"`
 }
 
+type decoratorMetadataOutput struct {
+	Source string
+	JS     string
+}
+
 func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 	rootDir := filepath.Join("testdata", "emit_decorator_metadata")
 	casesDir := filepath.Join(rootDir, "cases")
 	fixturesDir := filepath.Join(rootDir, "fixtures")
+	outputSnapshotsDir := filepath.Join(rootDir, "output_snapshots")
+	updateSnapshots := os.Getenv("UPDATE_SNAPSHOTS") != ""
 
 	entries, err := os.ReadDir(casesDir)
 	if err != nil {
@@ -83,6 +90,7 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 			sort.Strings(files)
 
 			var actual []decoratorMetadataRecord
+			var outputs []decoratorMetadataOutput
 			for _, file := range files {
 				casePath := filepath.Join(casesDir, file)
 				contents, err := os.ReadFile(casePath)
@@ -90,8 +98,11 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 					t.Fatalf("failed to read case %q: %v", casePath, err)
 				}
 				generated := compileTSWithDecoratorMetadataForTest(t, string(contents))
+				outputs = append(outputs, decoratorMetadataOutput{Source: file, JS: generated})
 				actual = append(actual, extractDecoratorMetadataRecordsForTest(t, generated)...)
 			}
+
+			assertDecoratorMetadataOutputSnapshotForTest(t, outputSnapshotsDir, name, outputs, updateSnapshots)
 
 			actualBytes, err := json.MarshalIndent(actual, "", "  ")
 			if err != nil {
@@ -105,6 +116,47 @@ func TestTSEmitDecoratorMetadataFixtures(t *testing.T) {
 			test.AssertEqualWithDiff(t, string(actualBytes)+"\n", string(expectedBytes)+"\n")
 		})
 	}
+}
+
+func assertDecoratorMetadataOutputSnapshotForTest(t *testing.T, snapshotsDir string, name string, outputs []decoratorMetadataOutput, updateSnapshots bool) {
+	t.Helper()
+
+	var builder strings.Builder
+	for i, output := range outputs {
+		js := strings.ReplaceAll(output.JS, "\r\n", "\n")
+		if len(outputs) > 1 {
+			builder.WriteString("// ----- ")
+			builder.WriteString(output.Source)
+			builder.WriteString(" -----\n")
+		}
+		builder.WriteString(js)
+		if !strings.HasSuffix(js, "\n") {
+			builder.WriteString("\n")
+		}
+		if i+1 < len(outputs) {
+			builder.WriteString("\n")
+		}
+	}
+
+	actual := builder.String()
+	snapshotPath := filepath.Join(snapshotsDir, name+".js")
+
+	if updateSnapshots {
+		if err := os.MkdirAll(snapshotsDir, 0755); err != nil {
+			t.Fatalf("failed to create snapshot directory %q: %v", snapshotsDir, err)
+		}
+		if err := os.WriteFile(snapshotPath, []byte(actual), 0644); err != nil {
+			t.Fatalf("failed to write snapshot %q: %v", snapshotPath, err)
+		}
+	}
+
+	expectedBytes, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		t.Fatalf("failed to read output snapshot %q: %v", snapshotPath, err)
+	}
+	expected := strings.ReplaceAll(string(expectedBytes), "\r\n", "\n")
+
+	test.AssertEqualWithDiff(t, actual, expected)
 }
 
 func decoratorMetadataCaseGroupName(name string) string {
