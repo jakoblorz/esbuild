@@ -9,6 +9,7 @@ const tscPath = path.join(repoRoot, '.fixtureenv/node_modules/.bin/tsc')
 
 const casesDir = path.join(repoRoot, 'internal/js_parser/testdata/emit_decorator_metadata/cases')
 const fixturesDir = path.join(repoRoot, 'internal/js_parser/testdata/emit_decorator_metadata/fixtures')
+const outputSnapshotsDir = path.join(repoRoot, 'internal/js_parser/testdata/emit_decorator_metadata/output_snapshots')
 
 const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind.LineFeed })
 
@@ -122,6 +123,25 @@ function extractMetadataRecords(js, sourcePathForDiagnostics) {
   return records
 }
 
+function renderCombinedSnapshot(outputs) {
+  let text = ''
+  for (let i = 0; i < outputs.length; i++) {
+    const { source, js } = outputs[i]
+    const normalizedJS = js.replace(/\r\n/g, '\n')
+    if (outputs.length > 1) {
+      text += `// ----- ${source} -----\n`
+    }
+    text += normalizedJS
+    if (!normalizedJS.endsWith('\n')) {
+      text += '\n'
+    }
+    if (i + 1 < outputs.length) {
+      text += '\n'
+    }
+  }
+  return text
+}
+
 function compileCaseGroup(casePaths, outDir) {
   const args = [
     tscPath,
@@ -149,6 +169,7 @@ function compileCaseGroup(casePaths, outDir) {
 function main() {
   if (!fs.existsSync(casesDir)) throw new Error(`Missing cases directory: ${casesDir}`)
   fs.mkdirSync(fixturesDir, { recursive: true })
+  fs.mkdirSync(outputSnapshotsDir, { recursive: true })
 
   const files = fs.readdirSync(casesDir)
     .filter(name => name.endsWith('.ts'))
@@ -179,6 +200,7 @@ function main() {
       compileCaseGroup(casePaths, outDir)
 
       const records = []
+      const emittedOutputs = []
       for (const file of groupFiles) {
         if (file.endsWith('.d.ts')) {
           continue
@@ -188,6 +210,7 @@ function main() {
           continue
         }
         const js = fs.readFileSync(emittedPath, 'utf8')
+        emittedOutputs.push({ source: file, js })
         records.push(...extractMetadataRecords(js, emittedPath))
       }
 
@@ -206,6 +229,10 @@ function main() {
       const fixturePath = path.join(fixturesDir, `${groupName}.json`)
       fs.writeFileSync(fixturePath, JSON.stringify(fixture, null, 2) + '\n')
       process.stdout.write(`wrote ${path.relative(repoRoot, fixturePath)}\n`)
+
+      const tscSnapshotPath = path.join(outputSnapshotsDir, `${groupName}.tsc.js`)
+      fs.writeFileSync(tscSnapshotPath, renderCombinedSnapshot(emittedOutputs))
+      process.stdout.write(`wrote ${path.relative(repoRoot, tscSnapshotPath)}\n`)
     }
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
