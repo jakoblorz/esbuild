@@ -455,6 +455,15 @@ truePkg();
 pkg2_default();
 
 ================================================================================
+TestTsconfigJsonTopLevelEmitDecoratorMetadataWarning
+---------- /Users/user/project/out.js ----------
+// Users/user/project/src/entry.ts
+var Foo = @foo class {
+  @foo
+  bar;
+};
+
+================================================================================
 TestTsconfigJsonTopLevelMistakeWarning
 ---------- /Users/user/project/out.js ----------
 // Users/user/project/src/entry.ts

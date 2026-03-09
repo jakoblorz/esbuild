@@ -315,6 +315,10 @@ type Property struct {
 
 	Decorators []Decorator
 
+	// This is used by TypeScript's "emitDecoratorMetadata" feature.
+	TSDecoratorTypeOrNil         Expr
+	TSDecoratorHasTypeAnnotation bool
+
 	Loc             logger.Loc
 	CloseBracketLoc logger.Loc
 	Kind            PropertyKind
@@ -337,6 +341,9 @@ type Arg struct {
 	DefaultOrNil Expr
 	Decorators   []Decorator
 
+	// This is used by TypeScript's "emitDecoratorMetadata" feature.
+	TSDecoratorTypeOrNil Expr
+
 	// "constructor(public x: boolean) {}"
 	IsTypeScriptCtorField bool
 }
@@ -355,6 +362,11 @@ type Fn struct {
 
 	// See: https://github.com/rollup/rollup/pull/5024
 	HasNoSideEffectsComment bool
+
+	// These are used by TypeScript's "emitDecoratorMetadata" feature.
+	TSDecoratorParamTypes      []Expr
+	TSDecoratorReturnTypeOrNil Expr
+	TSDecoratorHasReturnType   bool
 
 	// This is true if the function is a method
 	IsUniqueFormalParameters bool

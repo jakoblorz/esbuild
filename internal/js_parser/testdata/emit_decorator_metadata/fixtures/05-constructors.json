@@ -1,0 +1,28 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "05-constructors.ts",
+  "records": [
+    {
+      "kind": "class",
+      "target": "ExplicitEmpty",
+      "key": null,
+      "metadata": [
+        {
+          "key": "design:paramtypes",
+          "value": "[]"
+        }
+      ]
+    },
+    {
+      "kind": "class",
+      "target": "ParameterDecorated",
+      "key": null,
+      "metadata": [
+        {
+          "key": "design:paramtypes",
+          "value": "[String, Number]"
+        }
+      ]
+    }
+  ]
+}

@@ -139,6 +139,8 @@ func ParseTSConfigJSON(
 
 	// Parse "compilerOptions"
 	if compilerOptionsJSON, _, ok := getProperty(json, "compilerOptions"); ok {
+		emitDecoratorMetadataLoc := logger.Loc{Start: -1}
+
 		// Parse "baseUrl"
 		if valueJSON, _, ok := getProperty(compilerOptionsJSON, "baseUrl"); ok {
 			if value, ok := getString(valueJSON); ok {
@@ -196,6 +198,18 @@ func ParseTSConfigJSON(
 					result.Settings.ExperimentalDecorators = config.True
 				} else {
 					result.Settings.ExperimentalDecorators = config.False
+				}
+			}
+		}
+
+		// Parse "emitDecoratorMetadata"
+		if valueJSON, _, ok := getProperty(compilerOptionsJSON, "emitDecoratorMetadata"); ok {
+			emitDecoratorMetadataLoc = valueJSON.Loc
+			if value, ok := getBool(valueJSON); ok {
+				if value {
+					result.Settings.EmitDecoratorMetadata = config.True
+				} else {
+					result.Settings.EmitDecoratorMetadata = config.False
 				}
 			}
 		}
@@ -306,6 +320,15 @@ func ParseTSConfigJSON(
 			}
 		}
 
+		if result.Settings.EmitDecoratorMetadata == config.True && result.Settings.ExperimentalDecorators != config.True {
+			if emitDecoratorMetadataLoc.Start != -1 {
+				log.AddError(&tracker, source.RangeOfString(emitDecoratorMetadataLoc),
+					"Cannot use \"emitDecoratorMetadata\" without \"experimentalDecorators\"")
+			} else {
+				log.AddError(nil, logger.Range{}, "Cannot use \"emitDecoratorMetadata\" without \"experimentalDecorators\"")
+			}
+		}
+
 		// Parse "paths"
 		if valueJSON, _, ok := getProperty(compilerOptionsJSON, "paths"); ok {
 			if paths, ok := valueJSON.Data.(*js_ast.EObject); ok {
@@ -367,6 +390,7 @@ func ParseTSConfigJSON(
 				switch key {
 				case "alwaysStrict",
 					"baseUrl",
+					"emitDecoratorMetadata",
 					"experimentalDecorators",
 					"importsNotUsedAsValues",
 					"jsx",

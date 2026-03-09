@@ -630,6 +630,7 @@ type lowerClassContext struct {
 	defaultName ast.LocRef
 
 	ctor                   *js_ast.EFunction
+	explicitCtor           *js_ast.EFunction
 	extendsRef             ast.Ref
 	parameterFields        []js_ast.Stmt
 	instanceMembers        []js_ast.Stmt
@@ -1067,6 +1068,7 @@ func (ctx *lowerClassContext) lowerMethod(p *parser, prop js_ast.Property, priva
 		if fn, ok := prop.ValueOrNil.Data.(*js_ast.EFunction); ok {
 			// Remember where the constructor is for later
 			ctx.ctor = fn
+			ctx.explicitCtor = fn
 
 			// Initialize TypeScript constructor parameter fields
 			if p.options.ts.Parse {
@@ -1195,6 +1197,80 @@ func (p *parser) propertyNameHint(key js_ast.Expr) string {
 		return p.symbols[k.Ref.InnerIndex].OriginalName[1:]
 	default:
 		return ""
+	}
+}
+
+func (p *parser) makeLegacyDecoratorMetadataCall(loc logger.Loc, key string, value js_ast.Expr) js_ast.Expr {
+	return p.callRuntime(loc, "__legacyMetadata", []js_ast.Expr{
+		{Loc: loc, Data: &js_ast.EString{Value: helpers.StringToUTF16(key)}},
+		value,
+	})
+}
+
+func (p *parser) legacyDecoratorMetadataForProperty(loc logger.Loc, prop js_ast.Property) []js_ast.Expr {
+	if !p.shouldCaptureTypeScriptDecoratorMetadata() {
+		return nil
+	}
+
+	switch prop.Kind {
+	case js_ast.PropertyField, js_ast.PropertyDeclareOrAbstract, js_ast.PropertyAutoAccessor:
+		designType := prop.TSDecoratorTypeOrNil
+		if !prop.TSDecoratorHasTypeAnnotation {
+			designType = p.decoratorMetadataObjectExpr(loc)
+		}
+		return []js_ast.Expr{p.makeLegacyDecoratorMetadataCall(loc, "design:type", designType)}
+
+	case js_ast.PropertyMethod:
+		var paramTypes []js_ast.Expr
+		returnType := p.decoratorMetadataVoidExpr(loc)
+		if fn, ok := prop.ValueOrNil.Data.(*js_ast.EFunction); ok {
+			if len(fn.Fn.TSDecoratorParamTypes) > 0 {
+				paramTypes = append(paramTypes, fn.Fn.TSDecoratorParamTypes...)
+			}
+			if fn.Fn.TSDecoratorHasReturnType {
+				returnType = fn.Fn.TSDecoratorReturnTypeOrNil
+			}
+		}
+		return []js_ast.Expr{
+			p.makeLegacyDecoratorMetadataCall(loc, "design:type", p.decoratorMetadataFunctionExpr(loc)),
+			p.makeLegacyDecoratorMetadataCall(loc, "design:paramtypes", js_ast.Expr{Loc: loc, Data: &js_ast.EArray{Items: paramTypes}}),
+			p.makeLegacyDecoratorMetadataCall(loc, "design:returntype", returnType),
+		}
+
+	case js_ast.PropertyGetter:
+		designType := p.decoratorMetadataObjectExpr(loc)
+		if fn, ok := prop.ValueOrNil.Data.(*js_ast.EFunction); ok && fn.Fn.TSDecoratorHasReturnType {
+			designType = fn.Fn.TSDecoratorReturnTypeOrNil
+		}
+		return []js_ast.Expr{
+			p.makeLegacyDecoratorMetadataCall(loc, "design:type", designType),
+			p.makeLegacyDecoratorMetadataCall(loc, "design:paramtypes", js_ast.Expr{Loc: loc, Data: &js_ast.EArray{Items: nil}}),
+		}
+
+	case js_ast.PropertySetter:
+		designType := p.decoratorMetadataObjectExpr(loc)
+		paramTypes := []js_ast.Expr{designType}
+		if fn, ok := prop.ValueOrNil.Data.(*js_ast.EFunction); ok && len(fn.Fn.TSDecoratorParamTypes) > 0 {
+			designType = fn.Fn.TSDecoratorParamTypes[0]
+			paramTypes[0] = designType
+		}
+		return []js_ast.Expr{
+			p.makeLegacyDecoratorMetadataCall(loc, "design:type", designType),
+			p.makeLegacyDecoratorMetadataCall(loc, "design:paramtypes", js_ast.Expr{Loc: loc, Data: &js_ast.EArray{Items: paramTypes}}),
+		}
+	}
+
+	return nil
+}
+
+func (p *parser) legacyDecoratorMetadataForClass(loc logger.Loc, explicitCtor *js_ast.EFunction) []js_ast.Expr {
+	if !p.shouldCaptureTypeScriptDecoratorMetadata() || explicitCtor == nil {
+		return nil
+	}
+
+	paramTypes := append([]js_ast.Expr{}, explicitCtor.Fn.TSDecoratorParamTypes...)
+	return []js_ast.Expr{
+		p.makeLegacyDecoratorMetadataCall(loc, "design:paramtypes", js_ast.Expr{Loc: loc, Data: &js_ast.EArray{Items: paramTypes}}),
 	}
 }
 
@@ -1591,6 +1667,7 @@ func (ctx *lowerClassContext) processProperties(p *parser, classLoweringInfo cla
 			for i, decorator := range analysis.propExperimentalDecorators {
 				values[i] = decorator.Value
 			}
+			values = append(values, p.legacyDecoratorMetadataForProperty(loc, prop)...)
 			decorator := p.callRuntime(loc, "__decorateClass", []js_ast.Expr{
 				{Loc: loc, Data: &js_ast.EArray{Items: values}},
 				target,
@@ -2227,6 +2304,7 @@ func (ctx *lowerClassContext) finishAndGenerateCode(p *parser, result visitClass
 		for i, decorator := range classExperimentalDecorators {
 			values[i] = decorator.Value
 		}
+		values = append(values, p.legacyDecoratorMetadataForClass(ctx.classLoc, ctx.explicitCtor)...)
 		suffixExprs = append(suffixExprs, js_ast.Assign(
 			js_ast.Expr{Loc: nameForClassDecorators.Loc, Data: &js_ast.EIdentifier{Ref: nameForClassDecorators.Ref}},
 			p.callRuntime(ctx.classLoc, "__decorateClass", []js_ast.Expr{

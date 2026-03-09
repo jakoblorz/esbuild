@@ -2512,6 +2512,62 @@ func TestTsconfigJsonTopLevelMistakeWarning(t *testing.T) {
 	})
 }
 
+func TestTsconfigJsonTopLevelEmitDecoratorMetadataWarning(t *testing.T) {
+	tsconfig_suite.expectBundled(t, bundled{
+		files: map[string]string{
+			"/Users/user/project/src/entry.ts": `
+				@foo
+				class Foo {
+					@foo
+					bar: string
+				}
+			`,
+			"/Users/user/project/src/tsconfig.json": `
+				{
+					"emitDecoratorMetadata": true,
+					"experimentalDecorators": true
+				}
+			`,
+		},
+		entryPaths: []string{"/Users/user/project/src/entry.ts"},
+		options: config.Options{
+			Mode:          config.ModeBundle,
+			AbsOutputFile: "/Users/user/project/out.js",
+		},
+		expectedScanLog: `Users/user/project/src/tsconfig.json: WARNING: Expected the "emitDecoratorMetadata" option to be nested inside a "compilerOptions" object
+`,
+	})
+}
+
+func TestTsconfigEmitDecoratorMetadataRequiresExperimentalDecorators(t *testing.T) {
+	tsconfig_suite.expectBundled(t, bundled{
+		files: map[string]string{
+			"/Users/user/project/src/entry.ts": `
+				@foo
+				class Foo {
+					@foo
+					bar: string
+				}
+			`,
+			"/Users/user/project/src/tsconfig.json": `
+				{
+					"compilerOptions": {
+						"emitDecoratorMetadata": true,
+						"experimentalDecorators": false
+					}
+				}
+			`,
+		},
+		entryPaths: []string{"/Users/user/project/src/entry.ts"},
+		options: config.Options{
+			Mode:          config.ModeBundle,
+			AbsOutputFile: "/Users/user/project/out.js",
+		},
+		expectedScanLog: `Users/user/project/src/tsconfig.json: ERROR: Cannot use "emitDecoratorMetadata" without "experimentalDecorators"
+`,
+	})
+}
+
 // https://github.com/evanw/esbuild/issues/3307
 func TestTsconfigJsonBaseUrlIssue3307(t *testing.T) {
 	tsconfig_suite.expectBundled(t, bundled{

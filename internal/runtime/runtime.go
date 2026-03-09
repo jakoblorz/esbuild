@@ -259,6 +259,9 @@ func Source(unsupportedJSFeatures compat.JSFeature) logger.Source {
 			return result
 		}
 		export var __decorateParam = (index, decorator) => (target, key) => decorator(target, key, index)
+		export var __legacyMetadata = (k, v) => typeof Reflect === 'object' && typeof Reflect.metadata === 'function'
+			? Reflect.metadata(k, v)
+			: void 0
 
 		// For JavaScript decorators
 		export var __decoratorStart = base => [, , , __create(base?.[__knownSymbol('metadata')] ?? null)]

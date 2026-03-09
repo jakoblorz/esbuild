@@ -1353,7 +1353,14 @@ func (p *parser) skipTypeScriptTypeStmt(opts parseStmtOpts) {
 
 	p.skipTypeScriptTypeParameters(allowInOutVarianceAnnotations | allowEmptyTypeParameters)
 	p.lexer.Expect(js_lexer.TEquals)
-	p.skipTypeScriptType(js_ast.LLowest)
+	if p.shouldCaptureTypeScriptDecoratorMetadata() {
+		start := p.lexer.Range().Loc.Start
+		p.skipTypeScriptType(js_ast.LLowest)
+		end := p.lexer.Range().Loc.Start
+		p.localTypeMetadata[name] = p.decoratorMetadataExprFromTypeRange(start, end, logger.Loc{Start: start})
+	} else {
+		p.skipTypeScriptType(js_ast.LLowest)
+	}
 	p.lexer.ExpectOrInsertSemicolon()
 }
 
@@ -1363,6 +1370,9 @@ func (p *parser) parseTypeScriptEnumStmt(loc logger.Loc, opts parseStmtOpts) js_
 	nameText := p.lexer.Identifier.String
 	p.lexer.Expect(js_lexer.TIdentifier)
 	name := ast.LocRef{Loc: nameLoc, Ref: ast.InvalidRef}
+	if opts.isModuleScope {
+		p.localEnumNames[nameText] = true
+	}
 
 	// Generate the namespace object
 	exportedMembers := p.getOrCreateExportedNamespaceMembers(nameText, opts.isExport)

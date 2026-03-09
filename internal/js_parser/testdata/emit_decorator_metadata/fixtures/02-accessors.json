@@ -1,0 +1,66 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "02-accessors.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "Accessors.prototype",
+      "key": "\"typedGet\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[]"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Accessors.prototype",
+      "key": "\"untypedGet\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[]"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Accessors.prototype",
+      "key": "\"typedSet\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[String]"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Accessors.prototype",
+      "key": "\"untypedSet\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[Object]"
+        }
+      ]
+    }
+  ]
+}

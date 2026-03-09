@@ -1,0 +1,39 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "06-declare-abstract.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "DeclaredAndAbstract.prototype",
+      "key": "\"declared\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "DeclaredAndAbstract.prototype",
+      "key": "\"abstracted\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Number"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "DeclaredAndAbstract.prototype",
+      "key": "\"value\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Boolean"
+        }
+      ]
+    }
+  ]
+}

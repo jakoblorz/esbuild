@@ -107,6 +107,7 @@ func (tsConfig *TSConfigJSX) ApplyTo(jsxOptions *JSXOptions) {
 // for equality using a structural equality comparison by the JS parser.
 type TSConfig struct {
 	ExperimentalDecorators  MaybeBool
+	EmitDecoratorMetadata   MaybeBool
 	ImportsNotUsedAsValues  TSImportsNotUsedAsValues
 	PreserveValueImports    MaybeBool
 	Target                  TSTarget
@@ -118,6 +119,9 @@ type TSConfig struct {
 func (derived *TSConfig) ApplyExtendedConfig(base TSConfig) {
 	if base.ExperimentalDecorators != Unspecified {
 		derived.ExperimentalDecorators = base.ExperimentalDecorators
+	}
+	if base.EmitDecoratorMetadata != Unspecified {
+		derived.EmitDecoratorMetadata = base.EmitDecoratorMetadata
 	}
 	if base.ImportsNotUsedAsValues != TSImportsNotUsedAsValues_None {
 		derived.ImportsNotUsedAsValues = base.ImportsNotUsedAsValues

@@ -1,0 +1,204 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "03-field-types.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"anyType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"unknownType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"objectType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"stringType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"numberType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Number"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"booleanType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Boolean"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"symbolType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Symbol"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"bigintType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "BigInt"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"literalType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"arrayType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Array"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"tupleType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Array"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"unionType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"fnType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"classType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Ref"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"ifaceType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Object"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"aliasType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"enumType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Number"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "FieldTypes.prototype",
+      "key": "\"promiseType\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Promise"
+        }
+      ]
+    }
+  ]
+}

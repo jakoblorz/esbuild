@@ -1,0 +1,28 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "07-computed-static.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "ComputedStatic.prototype",
+      "key": "_a",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Number"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "ComputedStatic",
+      "key": "\"staticValue\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Promise"
+        }
+      ]
+    }
+  ]
+}

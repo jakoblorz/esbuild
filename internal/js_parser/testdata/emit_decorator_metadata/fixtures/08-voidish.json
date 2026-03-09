@@ -1,0 +1,69 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "08-voidish.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "Voidish.prototype",
+      "key": "\"v\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Voidish.prototype",
+      "key": "\"u\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Voidish.prototype",
+      "key": "\"n\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Voidish.prototype",
+      "key": "\"nev\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "void 0"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Voidish.prototype",
+      "key": "\"method\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[void 0]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "void 0"
+        }
+      ]
+    }
+  ]
+}

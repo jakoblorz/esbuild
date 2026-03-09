@@ -1,0 +1,44 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "04-method-types.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "MethodTypes.prototype",
+      "key": "\"rich\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[Object, String, String, Object, Number, Array, Function]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "String"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "MethodTypes.prototype",
+      "key": "\"implicit\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[Object]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "void 0"
+        }
+      ]
+    }
+  ]
+}

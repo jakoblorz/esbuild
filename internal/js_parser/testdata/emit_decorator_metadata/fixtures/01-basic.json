@@ -1,0 +1,47 @@
+{
+  "typescriptVersion": "5.9.3",
+  "source": "01-basic.ts",
+  "records": [
+    {
+      "kind": "member",
+      "target": "Basic.prototype",
+      "key": "\"field\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Number"
+        }
+      ]
+    },
+    {
+      "kind": "member",
+      "target": "Basic.prototype",
+      "key": "\"method\"",
+      "metadata": [
+        {
+          "key": "design:type",
+          "value": "Function"
+        },
+        {
+          "key": "design:paramtypes",
+          "value": "[String]"
+        },
+        {
+          "key": "design:returntype",
+          "value": "Boolean"
+        }
+      ]
+    },
+    {
+      "kind": "class",
+      "target": "Basic",
+      "key": null,
+      "metadata": [
+        {
+          "key": "design:paramtypes",
+          "value": "[String]"
+        }
+      ]
+    }
+  ]
+}

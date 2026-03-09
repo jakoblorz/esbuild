@@ -93,6 +93,9 @@ type parser struct {
 	emittedNamespaceVars       map[ast.Ref]bool
 	isExportedInsideNamespace  map[ast.Ref]ast.Ref
 	localTypeNames             map[string]bool
+	localTypeMetadata          map[string]js_ast.Expr
+	localEnumNames             map[string]bool
+	decoratorMetadataGlobals   map[string]ast.Ref
 	tsEnums                    map[ast.Ref]map[string]js_ast.TSEnumValue
 	constValues                map[ast.Ref]js_ast.ConstValue
 	propDerivedCtorValue       js_ast.E
@@ -649,19 +652,20 @@ const (
 // restored on the call stack around code that parses nested functions and
 // arrow expressions.
 type fnOrArrowDataParse struct {
-	arrowArgErrors      *deferredArrowArgErrors
-	decoratorScope      *js_ast.Scope
-	asyncRange          logger.Range
-	needsAsyncLoc       logger.Loc
-	await               awaitOrYield
-	yield               awaitOrYield
-	allowSuperCall      bool
-	allowSuperProperty  bool
-	isTopLevel          bool
-	isConstructor       bool
-	isTypeScriptDeclare bool
-	isThisDisallowed    bool
-	isReturnDisallowed  bool
+	arrowArgErrors           *deferredArrowArgErrors
+	decoratorScope           *js_ast.Scope
+	asyncRange               logger.Range
+	needsAsyncLoc            logger.Loc
+	await                    awaitOrYield
+	yield                    awaitOrYield
+	allowSuperCall           bool
+	allowSuperProperty       bool
+	isTopLevel               bool
+	isConstructor            bool
+	isTypeScriptDeclare      bool
+	isThisDisallowed         bool
+	isReturnDisallowed       bool
+	captureDecoratorMetadata bool
 
 	// In TypeScript, forward declarations of functions have no bodies
 	allowMissingBodyForTypeScript bool
@@ -2487,6 +2491,8 @@ func (p *parser) parseProperty(startLoc logger.Loc, kind js_ast.PropertyKind, op
 	if kind == js_ast.PropertyAutoAccessor || (opts.isClass && kind == js_ast.PropertyField &&
 		!hasTypeParameters && (p.lexer.Token != js_lexer.TOpenParen || hasDefiniteAssignmentAssertionOperator)) {
 		var initializerOrNil js_ast.Expr
+		var tsDecoratorTypeOrNil js_ast.Expr
+		tsDecoratorHasTypeAnnotation := false
 
 		// Forbid the names "constructor" and "prototype" in some cases
 		if !flags.Has(js_ast.PropertyIsComputed) {
@@ -2499,7 +2505,12 @@ func (p *parser) parseProperty(startLoc logger.Loc, kind js_ast.PropertyKind, op
 		// Skip over types
 		if p.options.ts.Parse && p.lexer.Token == js_lexer.TColon {
 			p.lexer.Next()
-			p.skipTypeScriptType(js_ast.LLowest)
+			if p.shouldCaptureTypeScriptDecoratorMetadata() {
+				tsDecoratorHasTypeAnnotation = true
+				tsDecoratorTypeOrNil = p.skipTypeScriptTypeAndCaptureDecoratorMetadata()
+			} else {
+				p.skipTypeScriptType(js_ast.LLowest)
+			}
 		}
 
 		if p.lexer.Token == js_lexer.TEquals {
@@ -2548,13 +2559,15 @@ func (p *parser) parseProperty(startLoc logger.Loc, kind js_ast.PropertyKind, op
 			flags |= js_ast.PropertyIsStatic
 		}
 		return js_ast.Property{
-			Decorators:       opts.decorators,
-			Loc:              startLoc,
-			Kind:             kind,
-			Flags:            flags,
-			Key:              key,
-			InitializerOrNil: initializerOrNil,
-			CloseBracketLoc:  closeBracketLoc,
+			Decorators:                   opts.decorators,
+			Loc:                          startLoc,
+			Kind:                         kind,
+			Flags:                        flags,
+			Key:                          key,
+			InitializerOrNil:             initializerOrNil,
+			CloseBracketLoc:              closeBracketLoc,
+			TSDecoratorTypeOrNil:         tsDecoratorTypeOrNil,
+			TSDecoratorHasTypeAnnotation: tsDecoratorHasTypeAnnotation,
 		}, true
 	}
 
@@ -2621,14 +2634,15 @@ func (p *parser) parseProperty(startLoc logger.Loc, kind js_ast.PropertyKind, op
 		}
 
 		fn, hadBody := p.parseFn(nil, opts.classKeyword, opts.decoratorContext, fnOrArrowDataParse{
-			needsAsyncLoc:      key.Loc,
-			asyncRange:         opts.asyncRange,
-			await:              await,
-			yield:              yield,
-			allowSuperCall:     opts.classHasExtends && isConstructor,
-			allowSuperProperty: true,
-			decoratorScope:     opts.decoratorScope,
-			isConstructor:      isConstructor,
+			needsAsyncLoc:            key.Loc,
+			asyncRange:               opts.asyncRange,
+			await:                    await,
+			yield:                    yield,
+			allowSuperCall:           opts.classHasExtends && isConstructor,
+			allowSuperProperty:       true,
+			decoratorScope:           opts.decoratorScope,
+			isConstructor:            isConstructor,
+			captureDecoratorMetadata: p.shouldCaptureTypeScriptDecoratorMetadata(),
 
 			// Only allow omitting the body if we're parsing TypeScript class
 			allowMissingBodyForTypeScript: p.options.ts.Parse && opts.isClass,
@@ -6224,6 +6238,7 @@ func (p *parser) parseFn(
 		isIdentifier := p.lexer.Token == js_lexer.TIdentifier
 		text := p.lexer.Identifier.String
 		arg := p.parseBinding(parseBindingOpts{})
+		var tsDecoratorTypeOrNil js_ast.Expr
 
 		if p.options.ts.Parse {
 			// Skip over TypeScript accessibility modifiers, which turn this argument
@@ -6255,7 +6270,13 @@ func (p *parser) parseFn(
 			// "function foo(a: any) {}"
 			if p.lexer.Token == js_lexer.TColon {
 				p.lexer.Next()
-				p.skipTypeScriptType(js_ast.LLowest)
+				if data.captureDecoratorMetadata {
+					tsDecoratorTypeOrNil = p.skipTypeScriptTypeAndCaptureDecoratorMetadata()
+				} else {
+					p.skipTypeScriptType(js_ast.LLowest)
+				}
+			} else if data.captureDecoratorMetadata {
+				tsDecoratorTypeOrNil = p.decoratorMetadataObjectExpr(arg.Loc)
 			}
 		}
 
@@ -6269,13 +6290,18 @@ func (p *parser) parseFn(
 		}
 
 		fn.Args = append(fn.Args, js_ast.Arg{
-			Decorators:   decorators,
-			Binding:      arg,
-			DefaultOrNil: defaultValueOrNil,
+			Decorators:           decorators,
+			Binding:              arg,
+			DefaultOrNil:         defaultValueOrNil,
+			TSDecoratorTypeOrNil: tsDecoratorTypeOrNil,
 
 			// We need to track this because it affects code generation
 			IsTypeScriptCtorField: isTypeScriptCtorField,
 		})
+
+		if data.captureDecoratorMetadata {
+			fn.TSDecoratorParamTypes = append(fn.TSDecoratorParamTypes, tsDecoratorTypeOrNil)
+		}
 
 		if p.lexer.Token != js_lexer.TComma {
 			break
@@ -6308,7 +6334,12 @@ func (p *parser) parseFn(
 	// "function foo(): any {}"
 	if p.options.ts.Parse && p.lexer.Token == js_lexer.TColon {
 		p.lexer.Next()
-		p.skipTypeScriptReturnType()
+		if data.captureDecoratorMetadata {
+			fn.TSDecoratorHasReturnType = true
+			fn.TSDecoratorReturnTypeOrNil = p.skipTypeScriptReturnTypeAndCaptureDecoratorMetadata()
+		} else {
+			p.skipTypeScriptReturnType()
+		}
 	}
 
 	// "function foo(): any;"
@@ -17705,6 +17736,9 @@ func newParser(log logger.Log, source logger.Source, lexer js_lexer.Lexer, optio
 		emittedNamespaceVars:       make(map[ast.Ref]bool),
 		isExportedInsideNamespace:  make(map[ast.Ref]ast.Ref),
 		localTypeNames:             make(map[string]bool),
+		localTypeMetadata:          make(map[string]js_ast.Expr),
+		localEnumNames:             make(map[string]bool),
+		decoratorMetadataGlobals:   make(map[string]ast.Ref),
 
 		// These are for handling ES6 imports and exports
 		importItemsForNamespace: make(map[ast.Ref]namespaceImportItems),
